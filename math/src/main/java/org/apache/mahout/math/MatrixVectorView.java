@@ -59,8 +59,11 @@ public class MatrixVectorView extends AbstractVector {
       return Math.min(n1, n2);
     } else if (rowStride > 0) {
       return (matrix.numRows() - row) / rowStride;
-    } else {
+    } else if(columnStride != 0){
       return (matrix.numCols() - column) / columnStride;
+    }
+    else {
+    	throw new IllegalArgumentException();
     }
   }
 
