@@ -624,15 +624,14 @@ public class EigenDecomposition {
           p /= s;
           q /= s;
           r /= s;
-          if (m == l) {
-            break;
+          if (m != l) {
+	          double hmag = Math.abs(h.getQuick(m - 1, m - 1)) + Math.abs(h.getQuick(m + 1, m + 1));
+	          double threshold = eps * Math.abs(p) * (Math.abs(z) + hmag);
+	          if (Math.abs(h.getQuick(m, m - 1)) * (Math.abs(q) + Math.abs(r)) < threshold) {
+	            break;
+	          }
+	          m--;
           }
-          double hmag = Math.abs(h.getQuick(m - 1, m - 1)) + Math.abs(h.getQuick(m + 1, m + 1));
-          double threshold = eps * Math.abs(p) * (Math.abs(z) + hmag);
-          if (Math.abs(h.getQuick(m, m - 1)) * (Math.abs(q) + Math.abs(r)) < threshold) {
-            break;
-          }
-          m--;
         }
 
         for (int i = m + 2; i <= n; i++) {

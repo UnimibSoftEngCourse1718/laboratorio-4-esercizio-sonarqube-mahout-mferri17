@@ -24,22 +24,25 @@
 package org.apache.mahout.math;
 
 public class SingularValueDecomposition implements java.io.Serializable {
-  
-  /** Arrays for internal storage of U and V. */
-  private final double[][] u;
-  private final double[][] v;
-  
-  /** Array for internal storage of singular values. */
-  private final double[] s;
-  
-  /** Row and column dimensions. */
-  private final int m;
-  private final int n;
-  
-  /**To handle the case where numRows() < numCols() and to use the fact that SVD(A')=VSU'=> SVD(A')'=SVD(A)**/
-  private boolean transpositionNeeded;
-  
-  /**
+
+	/** Arrays for internal storage of U and V. */
+	private final double[][] u;
+	private final double[][] v;
+
+	/** Array for internal storage of singular values. */
+	private final double[] s;
+
+	/** Row and column dimensions. */
+	private final int m;
+	private final int n;
+
+	/**
+	 * To handle the case where numRows() < numCols() and to use the fact that
+	 * SVD(A')=VSU'=> SVD(A')'=SVD(A)
+	 **/
+	private boolean transpositionNeeded;
+
+	/**
    * Constructs and returns a new singular value decomposition object; The
    * decomposed matrices can be retrieved via instance methods of the returned
    * decomposition object.
@@ -287,12 +290,11 @@ public class SingularValueDecomposition implements java.io.Serializable {
       // kase = 4     if e(p-1) is negligible (convergence).
       
       for (k = p - 2; k >= -1; k--) {
-        if (k == -1) {
-          break;
-        }
-        if (Math.abs(e[k]) <= tiny +eps * (Math.abs(s[k]) + Math.abs(s[k + 1]))) {
-          e[k] = 0.0;
-          break;
+        if (k != -1) {
+	        if (Math.abs(e[k]) <= tiny +eps * (Math.abs(s[k]) + Math.abs(s[k + 1]))) {
+	          e[k] = 0.0;
+	          break;
+	        }
         }
       }
       int kase;
@@ -301,16 +303,14 @@ public class SingularValueDecomposition implements java.io.Serializable {
       } else {
         int ks;
         for (ks = p - 1; ks >= k; ks--) {
-          if (ks == k) {
-            break;
-          }
-          double t =
-            (ks != p ?  Math.abs(e[ks]) : 0.) +
-            (ks != k + 1 ?  Math.abs(e[ks-1]) : 0.);
-          if (Math.abs(s[ks]) <= tiny + eps * t) {
-            s[ks] = 0.0;
-            break;
-          }
+          if (ks != k) {
+	          double t =
+	            (ks != p ?  Math.abs(e[ks]) : 0.) +
+	            (ks != k + 1 ?  Math.abs(e[ks-1]) : 0.);
+	          if (Math.abs(s[ks]) <= tiny + eps * t) {
+	            s[ks] = 0.0;
+	            break;
+	          }
         }
         if (ks == k) {
           kase = 3;
@@ -492,178 +492,178 @@ public class SingularValueDecomposition implements java.io.Serializable {
       }
     }
   }
-  
-  /**
-   * Returns the two norm condition number, which is <tt>max(S) / min(S)</tt>.
-   */
-  public double cond() {
-    return s[0] / s[Math.min(m, n) - 1];
-  }
-  
-  /**
-   * @return the diagonal matrix of singular values.
-   */
-  public Matrix getS() {
-    double[][] s = new double[n][n];
-    for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
-        s[i][j] = 0.0;
-      }
-      s[i][i] = this.s[i];
-    }
-    
-    return new DenseMatrix(s);
-  }
-  
-  /**
-   * Returns the diagonal of <tt>S</tt>, which is a one-dimensional array of
-   * singular values
-   * 
-   * @return diagonal of <tt>S</tt>.
-   */
-  public double[] getSingularValues() {
-    return s;
-  }
-  
-  /**
-   * Returns the left singular vectors <tt>U</tt>.
-   * 
-   * @return <tt>U</tt>
-   */
-  public Matrix getU() {
-    if (transpositionNeeded) { //case numRows() < numCols()
-      return new DenseMatrix(v);
-    } else {
-      int numCols = Math.min(m + 1, n);
-      Matrix r = new DenseMatrix(m, numCols);
-      for (int i = 0; i < m; i++) {
-        for (int j = 0; j < numCols; j++) {
-          r.set(i, j, u[i][j]);
-        }
-      }
 
-      return r;
-    }
-  }
-  
-  /**
-   * Returns the right singular vectors <tt>V</tt>.
-   * 
-   * @return <tt>V</tt>
-   */
-  public Matrix getV() {
-    if (transpositionNeeded) { //case numRows() < numCols()
-      int numCols = Math.min(m + 1, n);
-      Matrix r = new DenseMatrix(m, numCols);
-      for (int i = 0; i < m; i++) {
-        for (int j = 0; j < numCols; j++) {
-          r.set(i, j, u[i][j]);
-        }
-      }
+	/**
+	 * Returns the two norm condition number, which is <tt>max(S) / min(S)</tt>.
+	 */
+	public double cond() {
+		return s[0] / s[Math.min(m, n) - 1];
+	}
 
-      return r;
-    } else {
-      return new DenseMatrix(v);
-    }
-  }
-  
-  /** Returns the two norm, which is <tt>max(S)</tt>. */
-  public double norm2() {
-    return s[0];
-  }
-  
-  /**
-   * Returns the effective numerical matrix rank, which is the number of
-   * nonnegligible singular values.
-   */
-  public int rank() {
-    double eps = Math.pow(2.0, -52.0);
-    double tol = Math.max(m, n) * s[0] * eps;
-    int r = 0;
-    for (double value : s) {
-      if (value > tol) {
-        r++;
-      }
-    }
-    return r;
-  }
-  
-  /**
-   * @param minSingularValue
-   * minSingularValue - value below which singular values are ignored (a 0 or negative
-   * value implies all singular value will be used)
-   * @return Returns the n × n covariance matrix.
-   * The covariance matrix is V × J × Vt where J is the diagonal matrix of the inverse
-   *  of the squares of the singular values.
-   */
-  Matrix getCovariance(double minSingularValue) {
-    Matrix j = new DenseMatrix(s.length,s.length);
-    Matrix vMat = new DenseMatrix(this.v);
-    for (int i = 0; i < s.length; i++) {
-      j.set(i, i, s[i] >= minSingularValue ? 1 / (s[i] * s[i]) : 0.0);
-    }
-    return vMat.times(j).times(vMat.transpose());
-  }
-  
-  /**
-   * Returns a String with (propertyName, propertyValue) pairs. Useful for
-   * debugging or to quickly get the rough picture. For example,
-   * 
-   * <pre>
-   * rank          : 3
-   * trace         : 0
-   * </pre>
-   */
-  @Override
-  public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append("---------------------------------------------------------------------\n");
-    buf.append("SingularValueDecomposition(A) --> cond(A), rank(A), norm2(A), U, S, V\n");
-    buf.append("---------------------------------------------------------------------\n");
-    
-    buf.append("cond = ");
-    String unknown = "Illegal operation or error: ";
-    try {
-      buf.append(String.valueOf(this.cond()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    buf.append("\nrank = ");
-    try {
-      buf.append(String.valueOf(this.rank()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    buf.append("\nnorm2 = ");
-    try {
-      buf.append(String.valueOf(this.norm2()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    buf.append("\n\nU = ");
-    try {
-      buf.append(String.valueOf(this.getU()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    buf.append("\n\nS = ");
-    try {
-      buf.append(String.valueOf(this.getS()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    buf.append("\n\nV = ");
-    try {
-      buf.append(String.valueOf(this.getV()));
-    } catch (IllegalArgumentException exc) {
-      buf.append(unknown).append(exc.getMessage());
-    }
-    
-    return buf.toString();
-  }
+	/**
+	 * @return the diagonal matrix of singular values.
+	 */
+	public Matrix getS() {
+		double[][] s = new double[n][n];
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				s[i][j] = 0.0;
+			}
+			s[i][i] = this.s[i];
+		}
+
+		return new DenseMatrix(s);
+	}
+
+	/**
+	 * Returns the diagonal of <tt>S</tt>, which is a one-dimensional array of
+	 * singular values
+	 * 
+	 * @return diagonal of <tt>S</tt>.
+	 */
+	public double[] getSingularValues() {
+		return s;
+	}
+
+	/**
+	 * Returns the left singular vectors <tt>U</tt>.
+	 * 
+	 * @return <tt>U</tt>
+	 */
+	public Matrix getU() {
+		if (transpositionNeeded) { // case numRows() < numCols()
+			return new DenseMatrix(v);
+		} else {
+			int numCols = Math.min(m + 1, n);
+			Matrix r = new DenseMatrix(m, numCols);
+			for (int i = 0; i < m; i++) {
+				for (int j = 0; j < numCols; j++) {
+					r.set(i, j, u[i][j]);
+				}
+			}
+
+			return r;
+		}
+	}
+
+	/**
+	 * Returns the right singular vectors <tt>V</tt>.
+	 * 
+	 * @return <tt>V</tt>
+	 */
+	public Matrix getV() {
+		if (transpositionNeeded) { // case numRows() < numCols()
+			int numCols = Math.min(m + 1, n);
+			Matrix r = new DenseMatrix(m, numCols);
+			for (int i = 0; i < m; i++) {
+				for (int j = 0; j < numCols; j++) {
+					r.set(i, j, u[i][j]);
+				}
+			}
+
+			return r;
+		} else {
+			return new DenseMatrix(v);
+		}
+	}
+
+	/** Returns the two norm, which is <tt>max(S)</tt>. */
+	public double norm2() {
+		return s[0];
+	}
+
+	/**
+	 * Returns the effective numerical matrix rank, which is the number of
+	 * nonnegligible singular values.
+	 */
+	public int rank() {
+		double eps = Math.pow(2.0, -52.0);
+		double tol = Math.max(m, n) * s[0] * eps;
+		int r = 0;
+		for (double value : s) {
+			if (value > tol) {
+				r++;
+			}
+		}
+		return r;
+	}
+
+	/**
+	 * @param minSingularValue
+	 *            minSingularValue - value below which singular values are ignored
+	 *            (a 0 or negative value implies all singular value will be used)
+	 * @return Returns the n × n covariance matrix. The covariance matrix is V × J ×
+	 *         Vt where J is the diagonal matrix of the inverse of the squares of
+	 *         the singular values.
+	 */
+	Matrix getCovariance(double minSingularValue) {
+		Matrix j = new DenseMatrix(s.length, s.length);
+		Matrix vMat = new DenseMatrix(this.v);
+		for (int i = 0; i < s.length; i++) {
+			j.set(i, i, s[i] >= minSingularValue ? 1 / (s[i] * s[i]) : 0.0);
+		}
+		return vMat.times(j).times(vMat.transpose());
+	}
+
+	/**
+	 * Returns a String with (propertyName, propertyValue) pairs. Useful for
+	 * debugging or to quickly get the rough picture. For example,
+	 * 
+	 * <pre>
+	 * rank          : 3
+	 * trace         : 0
+	 * </pre>
+	 */
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("---------------------------------------------------------------------\n");
+		buf.append("SingularValueDecomposition(A) --> cond(A), rank(A), norm2(A), U, S, V\n");
+		buf.append("---------------------------------------------------------------------\n");
+
+		buf.append("cond = ");
+		String unknown = "Illegal operation or error: ";
+		try {
+			buf.append(String.valueOf(this.cond()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		buf.append("\nrank = ");
+		try {
+			buf.append(String.valueOf(this.rank()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		buf.append("\nnorm2 = ");
+		try {
+			buf.append(String.valueOf(this.norm2()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		buf.append("\n\nU = ");
+		try {
+			buf.append(String.valueOf(this.getU()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		buf.append("\n\nS = ");
+		try {
+			buf.append(String.valueOf(this.getS()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		buf.append("\n\nV = ");
+		try {
+			buf.append(String.valueOf(this.getV()));
+		} catch (IllegalArgumentException exc) {
+			buf.append(unknown).append(exc.getMessage());
+		}
+
+		return buf.toString();
+	}
 }
